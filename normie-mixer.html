@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Normie Mixer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+
+  :root {
+    --bg: #e3e5e4;
+    --dark: #48494b;
+    --mid: #8a8b8d;
+    --light: #d0d2d1;
+    --accent: #48494b;
+    --pixel: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--dark);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    image-rendering: pixelated;
+  }
+
+  /* Pixel grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--light) 1px, transparent 1px),
+      linear-gradient(90deg, var(--light) 1px, transparent 1px);
+    background-size: 10px 10px;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .logo {
+    font-family: 'VT323', monospace;
+    font-size: 64px;
+    color: var(--dark);
+    letter-spacing: 4px;
+    line-height: 1;
+    text-shadow: 4px 4px 0 var(--mid);
+  }
+
+  .tagline {
+    font-size: 13px;
+    color: var(--mid);
+    letter-spacing: 3px;
+    margin-top: 8px;
+    text-transform: uppercase;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .normie-card {
+    background: var(--bg);
+    border: 2px solid var(--dark);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    box-shadow: 4px 4px 0 var(--dark);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .normie-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--dark);
+  }
+
+  .card-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--mid);
+    text-transform: uppercase;
+    align-self: flex-start;
+  }
+
+  .id-input-wrapper {
+    display: flex;
+    width: 100%;
+    gap: 0;
+  }
+
+  .id-prefix {
+    background: var(--dark);
+    color: var(--bg);
+    padding: 8px 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    border: 2px solid var(--dark);
+    border-right: none;
+  }
+
+  input[type="number"] {
+    flex: 1;
+    background: var(--bg);
+    border: 2px solid var(--dark);
+    color: var(--dark);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    padding: 8px 10px;
+    outline: none;
+    width: 100%;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  input[type="number"]:focus {
+    background: var(--light);
+  }
+
+  .load-btn {
+    width: 100%;
+    background: var(--dark);
+    color: var(--bg);
+    border: 2px solid var(--dark);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 2px;
+    padding: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.1s, color 0.1s;
+  }
+
+  .load-btn:hover {
+    background: var(--bg);
+    color: var(--dark);
+  }
+
+  .load-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .normie-preview {
+    width: 120px;
+    height: 120px;
+    border: 2px solid var(--dark);
+    image-rendering: pixelated;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .normie-preview canvas {
+    image-rendering: pixelated;
+    width: 120px;
+    height: 120px;
+  }
+
+  .normie-preview .placeholder {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    color: var(--light);
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .traits-mini {
+    width: 100%;
+    font-size: 10px;
+    color: var(--mid);
+    line-height: 1.8;
+  }
+
+  .traits-mini span {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .traits-mini .trait-key {
+    color: var(--dark);
+    font-weight: bold;
+  }
+
+  /* Zone selector */
+  .zones-panel {
+    background: var(--bg);
+    border: 2px solid var(--dark);
+    padding: 24px;
+    box-shadow: 4px 4px 0 var(--dark);
+    margin-bottom: 32px;
+  }
+
+  .zones-title {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--dark);
+    padding-bottom: 8px;
+  }
+
+  .zones-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .zone-btn {
+    background: var(--bg);
+    border: 2px solid var(--dark);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 10px 6px;
+    cursor: pointer;
+    text-transform: uppercase;
+    text-align: center;
+    transition: all 0.1s;
+    color: var(--dark);
+  }
+
+  .zone-btn:hover { background: var(--light); }
+
+  .zone-btn.active-1 { background: var(--dark); color: var(--bg); }
+  .zone-btn.active-2 { background: var(--mid); color: var(--bg); }
+  .zone-btn.active-3 { background: #6a6b6d; color: var(--bg); }
+
+  .zone-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--mid);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    display: block;
+  }
+
+  /* Result */
+  .result-panel {
+    background: var(--bg);
+    border: 2px solid var(--dark);
+    padding: 24px;
+    box-shadow: 4px 4px 0 var(--dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .result-title {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    letter-spacing: 2px;
+    align-self: flex-start;
+    border-bottom: 2px solid var(--dark);
+    width: 100%;
+    padding-bottom: 8px;
+  }
+
+  .result-content {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .result-preview {
+    width: 200px;
+    height: 200px;
+    border: 2px solid var(--dark);
+    image-rendering: pixelated;
+    flex-shrink: 0;
+    background: var(--bg);
+    position: relative;
+  }
+
+  .result-preview canvas {
+    image-rendering: pixelated;
+    width: 200px;
+    height: 200px;
+  }
+
+  .result-preview .placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    color: var(--light);
+    text-align: center;
+    padding: 20px;
+  }
+
+  .recipe {
+    flex: 1;
+    font-size: 12px;
+    line-height: 2;
+  }
+
+  .recipe-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--mid);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .recipe-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .recipe-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--dark);
+    flex-shrink: 0;
+  }
+
+  .recipe-dot.dot-1 { background: var(--dark); }
+  .recipe-dot.dot-2 { background: var(--mid); }
+  .recipe-dot.dot-3 { background: #6a6b6d; }
+
+  .mix-btn {
+    background: var(--dark);
+    color: var(--bg);
+    border: 2px solid var(--dark);
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    letter-spacing: 3px;
+    padding: 12px 32px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.1s;
+    box-shadow: 4px 4px 0 var(--mid);
+  }
+
+  .mix-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--mid);
+  }
+
+  .mix-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 var(--mid);
+  }
+
+  .download-btn {
+    background: var(--bg);
+    color: var(--dark);
+    border: 2px solid var(--dark);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 10px 24px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.1s;
+  }
+
+  .download-btn:hover { background: var(--light); }
+  .download-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .status {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--mid);
+    text-transform: uppercase;
+    text-align: center;
+    min-height: 20px;
+  }
+
+  .error { color: #8b3a3a; }
+
+  footer {
+    text-align: center;
+    margin-top: 48px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--mid);
+    text-transform: uppercase;
+  }
+
+  /* Loading animation */
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  .blink { animation: blink 0.8s infinite; }
+
+  /* Zone overlay on preview */
+  .zone-overlay {
+    position: absolute;
+    left: 0; right: 0;
+    opacity: 0.25;
+    pointer-events: none;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">NORMIE MIXER</div>
+    <div class="tagline">off-black · off-white · off-perfect</div>
+  </header>
+
+  <!-- 3 Normie inputs -->
+  <div class="grid">
+    <div class="normie-card" id="card-1">
+      <span class="card-label">Normie #1</span>
+      <div class="normie-preview" id="preview-1">
+        <div class="placeholder">?<br><span style="font-size:14px">enter ID</span></div>
+      </div>
+      <div class="id-input-wrapper">
+        <span class="id-prefix">#</span>
+        <input type="number" id="id-1" min="0" max="9999" placeholder="0–9999">
+      </div>
+      <button class="load-btn" onclick="loadNormie(1)">LOAD</button>
+      <div class="traits-mini" id="traits-1"></div>
+    </div>
+
+    <div class="normie-card" id="card-2">
+      <span class="card-label">Normie #2</span>
+      <div class="normie-preview" id="preview-2">
+        <div class="placeholder">?<br><span style="font-size:14px">enter ID</span></div>
+      </div>
+      <div class="id-input-wrapper">
+        <span class="id-prefix">#</span>
+        <input type="number" id="id-2" min="0" max="9999" placeholder="0–9999">
+      </div>
+      <button class="load-btn" onclick="loadNormie(2)">LOAD</button>
+      <div class="traits-mini" id="traits-2"></div>
+    </div>
+
+    <div class="normie-card" id="card-3">
+      <span class="card-label">Normie #3</span>
+      <div class="normie-preview" id="preview-3">
+        <div class="placeholder">?<br><span style="font-size:14px">enter ID</span></div>
+      </div>
+      <div class="id-input-wrapper">
+        <span class="id-prefix">#</span>
+        <input type="number" id="id-3" min="0" max="9999" placeholder="0–9999">
+      </div>
+      <button class="load-btn" onclick="loadNormie(3)">LOAD</button>
+      <div class="traits-mini" id="traits-3"></div>
+    </div>
+  </div>
+
+  <!-- Zone selector -->
+  <div class="zones-panel">
+    <div class="zones-title">ZONE MIXER</div>
+    <div class="zones-grid" id="zones-grid">
+      <!-- Generated by JS -->
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div style="display:flex; justify-content:center; margin-bottom:24px;">
+    <button class="mix-btn" onclick="mixNormies()">[ MIX ]</button>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <!-- Result -->
+  <div class="result-panel" style="margin-top:24px;">
+    <div class="result-title">RESULT</div>
+    <div class="result-content">
+      <div class="result-preview" id="result-preview">
+        <div class="placeholder">Mix your<br>Normies<br>to see<br>the result</div>
+      </div>
+      <div class="recipe" id="recipe">
+        <div class="recipe-title">Recipe will appear here</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <button class="download-btn" id="dl-png" disabled onclick="downloadPNG()">DOWNLOAD PNG</button>
+      <button class="download-btn" id="dl-svg" disabled onclick="downloadSVG()">DOWNLOAD SVG</button>
+    </div>
+  </div>
+
+  <footer>
+    built with NormiesAPI · CC0 · on-chain pixel art
+  </footer>
+</div>
+
+<script>
+const API = 'https://api.normies.art';
+const COLOR_ON = '#48494b';
+const COLOR_OFF = '#e3e5e4';
+
+// Zones definition: name, row start, row end (0-indexed, out of 40)
+const ZONES = [
+  { id: 'hair',    label: 'HAIR',       rowStart: 0,  rowEnd: 10 },
+  { id: 'eyes',    label: 'EYES',       rowStart: 10, rowEnd: 18 },
+  { id: 'mouth',   label: 'MOUTH',      rowStart: 18, rowEnd: 27 },
+  { id: 'clothes', label: 'CLOTHES',    rowStart: 27, rowEnd: 40 },
+];
+
+// State
+const normies = { 1: null, 2: null, 3: null };
+// zoneSource[zoneId] = 1 | 2 | 3
+const zoneSource = { hair: 1, eyes: 1, mouth: 1, clothes: 1 };
+
+let resultPixels = null;
+
+// Build zone grid
+function buildZoneGrid() {
+  const grid = document.getElementById('zones-grid');
+  grid.innerHTML = '';
+
+  // Header row
+  const emptyCell = document.createElement('div');
+  grid.appendChild(emptyCell);
+  [1,2,3].forEach(n => {
+    const h = document.createElement('div');
+    h.style.cssText = 'text-align:center;font-size:11px;letter-spacing:2px;color:var(--mid);text-transform:uppercase;padding:4px;';
+    h.textContent = `NORMIE ${n}`;
+    grid.appendChild(h);
+  });
+
+  ZONES.forEach(zone => {
+    // Zone label
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'display:flex;align-items:center;font-size:11px;letter-spacing:1px;text-transform:uppercase;';
+    lbl.textContent = zone.label;
+    grid.appendChild(lbl);
+
+    [1,2,3].forEach(n => {
+      const btn = document.createElement('button');
+      btn.className = 'zone-btn' + (zoneSource[zone.id] === n ? ` active-${n}` : '');
+      btn.textContent = zoneSource[zone.id] === n ? '▶ ACTIVE' : 'USE';
+      btn.onclick = () => setZoneSource(zone.id, n);
+      grid.appendChild(btn);
+    });
+  });
+}
+
+function setZoneSource(zoneId, normieNum) {
+  zoneSource[zoneId] = normieNum;
+  buildZoneGrid();
+}
+
+// Load normie pixels + traits
+async function loadNormie(n) {
+  const idEl = document.getElementById(`id-${n}`);
+  const id = parseInt(idEl.value);
+  if (isNaN(id) || id < 0 || id > 9999) {
+    setStatus(`Invalid ID for Normie ${n}`, true);
+    return;
+  }
+
+  const btn = document.querySelector(`#card-${n} .load-btn`);
+  btn.disabled = true;
+  btn.textContent = 'LOADING...';
+  setStatus(`Loading Normie #${id}...`);
+
+  try {
+    const [pixRes, traitRes] = await Promise.all([
+      fetch(`${API}/normie/${id}/pixels`),
+      fetch(`${API}/normie/${id}/traits`)
+    ]);
+
+    if (!pixRes.ok) throw new Error(`Normie #${id} not found`);
+
+    const pixelStr = await pixRes.text();
+    const traitData = await traitRes.json();
+
+    const pixels = pixelStr.trim().replace(/\n/g, '').split('').map(Number);
+    normies[n] = { id, pixels, traits: traitData.attributes };
+
+    renderNormiePreview(n, pixels);
+    renderTraits(n, traitData.attributes);
+    setStatus(`Normie #${id} loaded ✓`);
+  } catch (e) {
+    setStatus(e.message, true);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'LOAD';
+}
+
+function renderNormiePreview(n, pixels) {
+  const container = document.getElementById(`preview-${n}`);
+  container.innerHTML = '';
+  const canvas = document.createElement('canvas');
+  canvas.width = 40;
+  canvas.height = 40;
+  drawPixels(canvas, pixels);
+  container.appendChild(canvas);
+}
+
+function drawPixels(canvas, pixels) {
+  const ctx = canvas.getContext('2d');
+  for (let y = 0; y < 40; y++) {
+    for (let x = 0; x < 40; x++) {
+      ctx.fillStyle = pixels[y * 40 + x] === 1 ? COLOR_ON : COLOR_OFF;
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+}
+
+function renderTraits(n, attributes) {
+  const el = document.getElementById(`traits-${n}`);
+  const show = ['Hair Style','Eyes','Expression','Accessory'];
+  el.innerHTML = attributes
+    .filter(a => show.includes(a.trait_type))
+    .map(a => `<span><span class="trait-key">${a.trait_type.split(' ').pop()}:</span> ${a.value}</span>`)
+    .join('');
+}
+
+function mixNormies() {
+  // Check at least normie 1 loaded
+  const loaded = Object.values(normies).filter(n => n !== null);
+  if (loaded.length === 0) {
+    setStatus('Load at least one Normie first', true);
+    return;
+  }
+
+  setStatus('Mixing...');
+
+  const mixed = new Array(1600).fill(0);
+
+  ZONES.forEach(zone => {
+    const src = normies[zoneSource[zone.id]];
+    const fallback = loaded[0];
+    const data = (src || fallback).pixels;
+
+    for (let row = zone.rowStart; row < zone.rowEnd; row++) {
+      for (let col = 0; col < 40; col++) {
+        mixed[row * 40 + col] = data[row * 40 + col];
+      }
+    }
+  });
+
+  resultPixels = mixed;
+
+  // Render result
+  const container = document.getElementById('result-preview');
+  container.innerHTML = '';
+  const canvas = document.createElement('canvas');
+  canvas.width = 40;
+  canvas.height = 40;
+  drawPixels(canvas, mixed);
+  container.appendChild(canvas);
+
+  // Recipe
+  renderRecipe();
+
+  document.getElementById('dl-png').disabled = false;
+  document.getElementById('dl-svg').disabled = false;
+  setStatus('Mix complete ✓');
+}
+
+function renderRecipe() {
+  const el = document.getElementById('recipe');
+  const lines = ZONES.map(zone => {
+    const src = zoneSource[zone.id];
+    const normie = normies[src];
+    const id = normie ? `#${normie.id}` : `N${src} (not loaded)`;
+    return `<div class="recipe-line">
+      <div class="recipe-dot dot-${src}"></div>
+      <span><strong>${zone.label}</strong> → Normie ${id}</span>
+    </div>`;
+  });
+
+  el.innerHTML = `<div class="recipe-title">Composition</div>${lines.join('')}`;
+}
+
+function downloadPNG() {
+  if (!resultPixels) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = 400;
+  canvas.height = 400;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  for (let y = 0; y < 40; y++) {
+    for (let x = 0; x < 40; x++) {
+      ctx.fillStyle = resultPixels[y * 40 + x] === 1 ? COLOR_ON : COLOR_OFF;
+      ctx.fillRect(x * 10, y * 10, 10, 10);
+    }
+  }
+
+  const a = document.createElement('a');
+  a.download = 'normie-mix.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+function downloadSVG() {
+  if (!resultPixels) return;
+  let rects = '';
+  for (let y = 0; y < 40; y++) {
+    for (let x = 0; x < 40; x++) {
+      const color = resultPixels[y * 40 + x] === 1 ? COLOR_ON : COLOR_OFF;
+      rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${color}"/>`;
+    }
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="400" height="400" shape-rendering="crispEdges">${rects}</svg>`;
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.download = 'normie-mix.svg';
+  a.href = URL.createObjectURL(blob);
+  a.click();
+}
+
+function setStatus(msg, isError = false) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = isError ? 'status error' : 'status';
+}
+
+// Enter key on inputs
+[1,2,3].forEach(n => {
+  document.getElementById(`id-${n}`).addEventListener('keydown', e => {
+    if (e.key === 'Enter') loadNormie(n);
+  });
+});
+
+// Init
+buildZoneGrid();
+</script>
+</body>
+</html>
